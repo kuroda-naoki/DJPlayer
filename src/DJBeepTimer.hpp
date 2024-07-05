@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-#define MOSQUIT_PIN 2
+#define MOSQUIT_PIN 22
 
 /**
  * モスキート音の周波数マクロ定数
@@ -20,13 +20,13 @@ hw_timer_t* DJTimer = timerBegin(0, getApbFrequency() / 1000000, true);
 portMUX_TYPE DJTimerMux = portMUX_INITIALIZER_UNLOCKED;
 extern volatile SemaphoreHandle_t DJTimerSemaphore;
 
-volatile uint8_t hzCounter = 0;
+volatile uint16_t hzCounter = 0;
 
 void IRAM_ATTR DJTimerISR();  // 高音～モスキート音を鳴らす割り込みハンドラ
 void initDJTimer();                  // DJTimerの初期化
 void updateDJTimer(uint64_t sound);  // DJTimerの音の高さ更新
 void enableDJTimer();                // DJTimerの有効化
-void disableDJTimer();               // DJTimerの無効化
+volatile void disableDJTimer();               // DJTimerの無効化
 
 void IRAM_ATTR DJTimerISR() {
     // 割り込み禁止を開始する関数
@@ -39,6 +39,18 @@ void IRAM_ATTR DJTimerISR() {
     } else {
         digitalWrite(MOSQUIT_PIN, LOW);
     }
+
+    // if (hzCounter > 12000) {
+    //     digitalWrite(MOSQUIT_PIN, LOW);
+    //     hzCounter = 0;
+    //     timerStop(DJTimer);
+    // }
+
+    // if (hzCounter > 900) {
+    //     digitalWrite(MOSQUIT_PIN, LOW);
+    //     hzCounter = 0;
+    //     timerStop(DJTimer);
+    // }
 
     // // 何故かこれだと常にHIGHになる
     // if (hzCounter & 0x01) {
@@ -58,6 +70,7 @@ void initDJTimer() {
     // DJTimerSemaphore = xSemaphoreCreateBinary();
     timerAttachInterrupt(DJTimer, &DJTimerISR, true);
     timerAlarmWrite(DJTimer, DJ_MOSQUIT_NO_HUMAN, true);
+    // timerAlarmWrite(DJTimer, DJ_MOSQUIT_ALL_OLD, true);
 }
 
 void updateDJTimer(uint64_t sound) {
@@ -68,6 +81,6 @@ void enableDJTimer() {
     timerAlarmEnable(DJTimer);
 }
 
-void disableDJTimer() {
+volatile void disableDJTimer() {
     timerAlarmDisable(DJTimer);
 }
