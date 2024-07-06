@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <M5Stack.h>
 
 #include "DJBeepTimer.hpp"
 #include "DJDiscEncoder.hpp"
@@ -7,7 +8,12 @@
 void setup()
 {
 
-  Serial.begin(115200);
+  Serial2.begin(9600, SERIAL_8N1, 16, 17);
+
+  M5.begin();
+  M5.Lcd.setRotation(3);
+  M5.Lcd.setTextSize(3);
+  M5.Lcd.print("DJ Player");
 
   pinMode(MOSQUIT_PIN, OUTPUT);
   pinMode(ENCODER_PIN, INPUT);
@@ -27,6 +33,13 @@ void setup()
 
   digitalWrite(MOSQUIT_PIN, LOW);
 
+  delay(1000);
+
+  while (digitalRead(DJ_BUTTON_PIN_3) == HIGH)
+  {
+    delay(10);
+  }
+
 }
 
 void loop()
@@ -34,10 +47,22 @@ void loop()
 
   static uint16_t oldMosquit = DJ_MOSQUIT_NO_HUMAN;
 
+  static String tagId = "";
+    while (Serial2.available()) {
+        char receivedChar = Serial2.read();
+        if (receivedChar == '\n') {
+          disableDJTimer();
+          // M5.Lcd.clear();
+          M5.Lcd.setCursor(0, 0);
+          M5.Lcd.println(tagId);
+          enableDJTimer();
+        } else {
+            tagId += receivedChar;
+        }
+    }
+
   if (digitalRead(DJ_BUTTON_PIN_1) == HIGH)
   {
-    Serial.println("DJ_BUTTON_PIN_1");
-
     updateDJTimer(DJ_MOSQUIT_20_OLD);
 
     timerStart(DJTimer);
@@ -50,8 +75,6 @@ void loop()
   
   if (digitalRead(DJ_BUTTON_PIN_2) == HIGH)
   {
-    Serial.println("DJ_BUTTON_PIN_2");
-
     updateDJTimer(DJ_MOSQUIT_40_OLD);
 
     timerStart(DJTimer);
@@ -64,8 +87,6 @@ void loop()
 
   if (digitalRead(DJ_BUTTON_PIN_3) == HIGH)
   {
-    Serial.println("DJ_BUTTON_PIN_3");
-
     updateDJTimer(DJ_MOSQUIT_ALL_OLD);
 
     timerStart(DJTimer);
