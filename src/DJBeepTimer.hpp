@@ -74,7 +74,9 @@ void initDJTimer() {
 }
 
 void updateDJTimer(uint64_t sound) {
+    disableDJTimer();
     timerAlarmWrite(DJTimer, sound, true);
+    enableDJTimer();
 }
 
 void enableDJTimer() {
